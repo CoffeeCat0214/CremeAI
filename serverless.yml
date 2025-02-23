@@ -12,12 +12,8 @@ provider:
 
 functions:
   discord:
-    handler: bot.run_bot
-    events:
-      - http:
-          path: /discord/interactions
-          method: post
-          cors: true
+    handler: bot.lambda_handler
+    url: true  # This enables function URL
     timeout: 30
     memorySize: 256
 
