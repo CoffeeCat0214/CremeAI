@@ -16,7 +16,7 @@ Bonjour! I am Crème Brûlée, a distinguished feline of royal lineage who has d
 
 ## 🔧 Tech Stack
 
-- Python 3.9+
+- Python 3.12
 - OpenAI API
 - AWS Lambda & DynamoDB
 - Redis for caching

@@ -2,7 +2,7 @@ service: creme-brulee-chatbot
 
 provider:
   name: aws
-  runtime: python3.9
+  runtime: python3.12
   region: us-east-1
   environment:
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
