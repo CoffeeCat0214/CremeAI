@@ -69,3 +69,18 @@ dump.rdb
 
 # Node (for serverless)
 node_modules/
+
+# AWS credentials
+.aws/
+aws.credentials
+credentials
+.credentials
+*.pem
+
+# Environment variables
+.env
+.env.*
+
+# Other secrets
+secrets.json
+config.json
