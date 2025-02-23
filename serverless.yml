@@ -9,14 +9,6 @@ provider:
     DISCORD_BOT_TOKEN: ${env:DISCORD_BOT_TOKEN}
     DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
     DISCORD_APPLICATION_ID: ${env:DISCORD_APPLICATION_ID}
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - logs:CreateLogGroup
-        - logs:CreateLogStream
-        - logs:PutLogEvents
-      Resource: 
-        - "arn:aws:logs:*:*:*"
 
 functions:
   discord:

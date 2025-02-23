@@ -4,6 +4,9 @@ from services.chat_service import ChatService
 import os
 from dotenv import load_dotenv
 import logging
+import json
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -59,6 +62,43 @@ async def decree(interaction: discord.Interaction):
     except Exception as e:
         logger.error(f"Error in decree command: {str(e)}")
         await interaction.followup.send("Meow? Something went wrong with the royal decree!")
+
+def verify_signature(event):
+    """Verify that the request came from Discord"""
+    try:
+        public_key = os.getenv('DISCORD_PUBLIC_KEY')
+        signature = event['headers']['x-signature-ed25519']
+        timestamp = event['headers']['x-signature-timestamp']
+        body = event['body']
+
+        verify_key = VerifyKey(bytes.fromhex(public_key))
+        verify_key.verify(f"{timestamp}{body}".encode(), bytes.fromhex(signature))
+        return True
+    except Exception as e:
+        logger.error(f"Signature verification failed: {str(e)}")
+        return False
+
+def lambda_handler(event, context):
+    """AWS Lambda handler"""
+    # Verify the request
+    if not verify_signature(event):
+        return {
+            'statusCode': 401,
+            'body': json.dumps({'error': 'invalid request signature'})
+        }
+
+    # Parse the request body
+    body = json.loads(event['body'])
+    
+    # Handle Discord's ping
+    if body['type'] == 1:  # PING
+        return {
+            'statusCode': 200,
+            'body': json.dumps({'type': 1})  # PONG
+        }
+
+    # Handle commands here
+    # ... rest of your bot code ...
 
 def run_bot():
     client.run(os.getenv('DISCORD_BOT_TOKEN'))
