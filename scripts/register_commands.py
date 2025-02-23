@@ -48,4 +48,4 @@ def register_commands() -> None:
             print(f"Error: {response.text}")
 
 if __name__ == "__main__":
-    register_commands() 
+    register_commands()
