@@ -6,22 +6,10 @@ provider:
   region: us-east-1
   environment:
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
-    REDIS_HOST: ${env:REDIS_HOST}
-    REDIS_PORT: ${env:REDIS_PORT}
-    DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
-    DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
-    ENVIRONMENT: prod
     DISCORD_BOT_TOKEN: ${env:DISCORD_BOT_TOKEN}
+    DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
+    DISCORD_APPLICATION_ID: ${env:DISCORD_APPLICATION_ID}
   iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - cloudwatch:PutMetricData
-      Resource: "*"
-    - Effect: Allow
-      Action:
-        - dynamodb:*
-      Resource: 
-        - !GetAtt ChatHistoryTable.Arn
     - Effect: Allow
       Action:
         - logs:CreateLogGroup
@@ -31,48 +19,19 @@ provider:
         - "arn:aws:logs:*:*:*"
 
 functions:
-  api:
-    handler: lambda_handler.lambda_handler
-    events:
-      - http:
-          path: /{proxy+}
-          method: any
-    timeout: 30
-    memorySize: 256
-    provisionedConcurrency: 2
-
   discord:
-    handler: discord_lambda.lambda_handler
+    handler: bot.run_bot
     events:
       - http:
           path: /discord/interactions
           method: post
           cors: true
-    timeout: 15
+    timeout: 30
     memorySize: 256
-    environment:
-      DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
 
-    vpc:
-      securityGroupIds:
-        - sg-xxxxxxxxxxxxxx
-      subnetIds:
-        - subnet-xxxxxxxxxxxxxx
-
-resources:
-  Resources:
-    ChatHistoryTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${env:DYNAMODB_TABLE}
-        AttributeDefinitions:
-          - AttributeName: user_id
-            AttributeType: S
-          - AttributeName: timestamp
-            AttributeType: N
-        KeySchema:
-          - AttributeName: user_id
-            KeyType: HASH
-          - AttributeName: timestamp
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST 
+package:
+  patterns:
+    - '!venv/**'
+    - '!.env'
+    - '!__pycache__/**'
+    - '!.git/**' 
