@@ -38,12 +38,6 @@ def register_commands() -> None:
         "Content-Type": "application/json"
     }
 
-    # Delete existing commands
-    existing_commands = requests.get(url, headers=headers).json()
-    for command in existing_commands:
-        delete_url = f"{url}/{command['id']}"
-        requests.delete(delete_url, headers=headers)
-
     # Register new commands
     for command in commands:
         response = requests.post(url, headers=headers, json=command)

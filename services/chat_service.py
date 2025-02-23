@@ -1,100 +1,55 @@
-import openai
-from typing import Dict, Optional
+from openai import OpenAI
+from typing import Dict
 import os
-from .memory_service import MemoryService
-from .personality_service import PersonalityService
-from .cache_service import CacheService
-from .webhook_service import WebhookService
-from .task_service import process_long_conversation
-from ..exceptions import AIServiceError
+from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger('discord')
+
+load_dotenv()
 
 class ChatService:
     def __init__(self):
-        self.memory_service = MemoryService()
-        self.personality_service = PersonalityService()
-        self.cache_service = CacheService()
-        self.webhook_service = WebhookService()
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-
-    async def generate_response(
-        self, 
-        user_id: str, 
-        message: str, 
-        platform: str
-    ) -> Dict[str, str]:
+        logger.info("Initializing ChatService")
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            logger.error("OpenAI API key not found!")
+            raise ValueError("OpenAI API key not found")
+        logger.info("OpenAI API key found")
+        self.client = OpenAI(api_key=self.api_key)
+        
+    async def generate_response(self, user_id: str, message: str) -> Dict[str, str]:
+        """Generate a response using OpenAI"""
         try:
-            # Check cache first
-            cached_response = await self.cache_service.get_cached_response(
-                user_id=user_id,
-                message=message,
-                platform=platform
-            )
+            logger.info(f"Generating response for user {user_id}")
+            logger.info(f"Using message: {message}")
             
-            if cached_response:
-                return cached_response
-
-            # Get conversation history
-            history = await self.memory_service.get_chat_history(user_id)
+            system_prompt = """You are Crème Brûlée, a sophisticated and slightly snobbish royal cat.
+            When issuing decrees:
+            1. Always start with "ROYAL DECREE:"
+            2. Make them appropriately cat-themed (naps, treats, scratches)
+            3. Use formal, regal language with French phrases
+            4. Add a small threat of punishment for disobedience
+            5. Sign it as 'Her Royal Highness, Crème Brûlée ��👑'"""
             
-            # Process long conversations in background
-            if len(history) > 10:
-                process_long_conversation.delay(history)
-
-            # Get personality prompt
-            system_prompt = self.personality_service.get_base_prompt()
-            
-            # Construct the messages for GPT
-            messages = [
-                {"role": "system", "content": system_prompt},
-                *history,
-                {"role": "user", "content": message}
-            ]
-
-            # Generate response
-            response = await openai.ChatCompletion.acreate(
+            response = self.client.chat.completions.create(
                 model="gpt-4",
-                messages=messages,
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": system_prompt
+                    },
+                    {"role": "user", "content": message}
+                ],
                 temperature=0.9,
                 max_tokens=150
             )
-
-            # Store the interaction
-            await self.memory_service.store_interaction(
-                user_id=user_id,
-                message=message,
-                response=response.choices[0].message.content,
-                platform=platform
-            )
-
-            result = {
-                "response": response.choices[0].message.content,
-                "decree": self._extract_decree(response.choices[0].message.content)
+            
+            logger.info("Successfully generated response from OpenAI")
+            return {
+                "response": response.choices[0].message.content
             }
-
-            # Cache the response
-            await self.cache_service.cache_response(
-                user_id=user_id,
-                message=message,
-                platform=platform,
-                response=result
-            )
-
-            # Notify webhooks about new interaction
-            await self.webhook_service.notify_event(
-                "chat.response",
-                {
-                    "user_id": user_id,
-                    "platform": platform,
-                    "response": result
-                }
-            )
-
-            return result
         except Exception as e:
-            raise AIServiceError(str(e))
-
-    def _extract_decree(self, response: str) -> Optional[str]:
-        # Extract royal decree if present in the response
-        if "ROYAL DECREE:" in response:
-            return response.split("ROYAL DECREE:")[1].strip()
-        return None 
+            logger.error(f"Error generating response: {str(e)}")
+            logger.error(f"Error type: {type(e)}")
+            raise Exception(f"Failed to generate response: {str(e)}") 
