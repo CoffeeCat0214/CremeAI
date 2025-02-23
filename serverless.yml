@@ -1,4 +1,4 @@
-service: creme-brulee-chatbot
+service: creme-brulee-bot
 
 provider:
   name: aws
@@ -11,6 +11,7 @@ provider:
     DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
     DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
     ENVIRONMENT: prod
+    DISCORD_BOT_TOKEN: ${env:DISCORD_BOT_TOKEN}
   iamRoleStatements:
     - Effect: Allow
       Action:

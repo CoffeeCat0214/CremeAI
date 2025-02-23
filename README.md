@@ -24,10 +24,11 @@ Bonjour! I am Crème Brûlée, a distinguished feline of royal lineage who has d
 
 ## 📝 Required Credentials
 
-1. Discord Application credentials (from Discord Developer Portal)
-2. OpenAI API key
-3. AWS account
-4. Redis instance
+**Important: Never commit real credentials to version control!**
+
+1. Copy `.env.example` to `.env`
+2. Fill in your actual credentials in `.env`
+3. Keep `.env` in your `.gitignore`
 
 ## 🚨 Need Help?
 

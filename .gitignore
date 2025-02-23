@@ -80,6 +80,7 @@ credentials
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Other secrets
 secrets.json

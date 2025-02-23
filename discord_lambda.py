@@ -30,75 +30,27 @@ def verify_signature(event: Dict[str, Any]) -> bool:
 
 async def handle_interaction(body: Dict[str, Any]) -> Dict[str, Any]:
     """Handle Discord interaction"""
-    interaction_type = body.get('type', 0)
+    chat_service = ChatService()
     
-    # Ping
-    if interaction_type == 1:
+    if body["type"] == 1:  # PING
+        return {"type": 1}  # PONG
+        
+    if body["type"] == 2:  # APPLICATION_COMMAND
+        response = await chat_service.generate_response(
+            user_id=body["member"]["user"]["id"],
+            message=body["data"]["options"][0]["value"],
+            platform="discord"
+        )
+        
         return {
-            "type": 1  # PONG
-        }
-    
-    # Application Command
-    if interaction_type == 2:
-        command_name = body.get('data', {}).get('name', '')
-        
-        if command_name == "chat":
-            # Get the message content
-            options = body.get('data', {}).get('options', [])
-            message = next((opt['value'] for opt in options if opt['name'] == 'message'), '')
-            
-            # Generate response
-            chat_service = ChatService()
-            response = await chat_service.generate_response(
-                user_id=str(body['member']['user']['id']),
-                message=message,
-                platform='discord'
-            )
-            
-            return {
-                "type": 4,  # CHANNEL_MESSAGE_WITH_SOURCE
-                "data": {
-                    "content": response['response'],
-                    "embeds": [
-                        {
-                            "title": "🔰 Royal Decree 🔰",
-                            "description": response['decree'],
-                            "color": 0xFFD700
-                        }
-                    ] if response.get('decree') else []
-                }
+            "type": 4,
+            "data": {
+                "content": response["response"]
             }
-        
-        elif command_name == "decree":
-            chat_service = ChatService()
-            response = await chat_service.generate_response(
-                user_id=str(body['member']['user']['id']),
-                message="I demand a royal decree!",
-                platform='discord'
-            )
-            
-            return {
-                "type": 4,
-                "data": {
-                    "embeds": [
-                        {
-                            "title": "🔰 Royal Decree 🔰",
-                            "description": response.get('decree', 'No decree at this time'),
-                            "color": 0xFFD700
-                        }
-                    ]
-                }
-            }
-    
-    return {
-        "type": 4,
-        "data": {
-            "content": "Meow? I don't understand that command."
         }
-    }
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
-    """AWS Lambda handler for Discord interactions"""
+    """AWS Lambda entry point"""
     try:
         # Verify signature
         if not verify_signature(event):

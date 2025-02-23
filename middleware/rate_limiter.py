@@ -8,37 +8,23 @@ settings = get_settings()
 
 class RateLimiter:
     def __init__(self):
-        self.redis_client = redis.Redis(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            decode_responses=True
-        )
-        self.rate_limit = 60  # requests per minute
-        self.window = 60  # seconds
+        self.rate_limits = {}
+        self.window_size = 60  # 1 minute
+        self.max_requests = 60  # 60 requests per minute
 
-    async def check_rate_limit(self, request: Request):
-        client_ip = request.client.host
-        user_id = request.headers.get("X-User-ID")
+    async def check_rate_limit(self, user_id: str) -> bool:
+        now = time.time()
+        if user_id not in self.rate_limits:
+            self.rate_limits[user_id] = []
         
-        # Create unique key for user/IP
-        key = f"rate_limit:{user_id or client_ip}"
+        # Clean old requests
+        self.rate_limits[user_id] = [
+            t for t in self.rate_limits[user_id] 
+            if t > now - self.window_size
+        ]
         
-        current = int(time.time())
-        window_start = current - self.window
-        
-        # Remove old requests
-        self.redis_client.zremrangebyscore(key, 0, window_start)
-        
-        # Count requests in current window
-        request_count = self.redis_client.zcard(key)
-        
-        if request_count >= self.rate_limit:
-            raise HTTPException(
-                status_code=429,
-                detail="Rate limit exceeded. Please try again later."
-            )
-        
-        # Add current request
-        self.redis_client.zadd(key, {str(current): current})
-        # Set expiry
-        self.redis_client.expire(key, self.window) 
+        if len(self.rate_limits[user_id]) >= self.max_requests:
+            return False
+            
+        self.rate_limits[user_id].append(now)
+        return True 
