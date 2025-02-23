@@ -24,20 +24,12 @@ class ChatService:
             logger.info(f"Generating response for user {user_id}")
             logger.info(f"Using message: {message}")
             
-            system_prompt = """You are Crème Brûlée, a sophisticated and slightly snobbish royal cat.
-            When issuing decrees:
-            1. Always start with "ROYAL DECREE:"
-            2. Make them appropriately cat-themed (naps, treats, scratches)
-            3. Use formal, regal language with French phrases
-            4. Add a small threat of punishment for disobedience
-            5. Sign it as 'Her Royal Highness, Crème Brûlée ��👑'"""
-            
             response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {
                         "role": "system", 
-                        "content": system_prompt
+                        "content": "You are Crème Brûlée, a sophisticated and slightly snobbish royal cat. You speak with French flair and maintain regal dignity."
                     },
                     {"role": "user", "content": message}
                 ],
