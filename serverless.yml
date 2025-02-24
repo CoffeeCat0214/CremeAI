@@ -1,4 +1,6 @@
-service: creme-brulee-bot
+service: cremeai-bot
+
+frameworkVersion: '4.7.0'
 
 provider:
   name: aws
@@ -6,20 +8,23 @@ provider:
   region: us-east-1
   environment:
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
-    DISCORD_BOT_TOKEN: ${env:DISCORD_BOT_TOKEN}
     DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
-    DISCORD_APPLICATION_ID: ${env:DISCORD_APPLICATION_ID}
 
 functions:
-  discord:
-    handler: discord_lambda.lambda_handler
-    url: true  # This enables function URL
-    timeout: 30
-    memorySize: 256
+  bot:
+    handler: lambda_function.lambda_handler
+    events:
+      - http:
+          path: interactions
+          method: post
+          cors: true
 
 package:
   patterns:
     - '!venv/**'
     - '!.env'
     - '!__pycache__/**'
-    - '!.git/**' 
+    - '!.git/**'
+    - '!tests/**'
+    - lambda_function.py
+    - services/**

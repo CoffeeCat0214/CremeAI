@@ -1,12 +1,9 @@
+import os
 from openai import OpenAI
 from typing import Dict
-import os
-from dotenv import load_dotenv
 import logging
 
 logger = logging.getLogger('discord')
-
-load_dotenv()
 
 class ChatService:
     def __init__(self):
@@ -18,7 +15,7 @@ class ChatService:
         logger.info("OpenAI API key found")
         self.client = OpenAI(api_key=self.api_key)
         
-    async def generate_response(self, user_id: str, message: str) -> Dict[str, str]:
+    def generate_response(self, user_id: str, message: str) -> dict:
         """Generate a response using OpenAI"""
         try:
             logger.info(f"Generating response for user {user_id}")
@@ -29,7 +26,7 @@ class ChatService:
                 messages=[
                     {
                         "role": "system", 
-                        "content": "You are Crème Brûlée, a sophisticated and slightly snobbish royal cat. You speak with French flair and maintain regal dignity."
+                        "content": "You are Crème Brûlée, a sophisticated and slightly snobbish royal cat."
                     },
                     {"role": "user", "content": message}
                 ],
