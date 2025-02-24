@@ -12,7 +12,7 @@ provider:
 
 functions:
   discord:
-    handler: bot.lambda_handler
+    handler: discord_lambda.lambda_handler
     url: true  # This enables function URL
     timeout: 30
     memorySize: 256
