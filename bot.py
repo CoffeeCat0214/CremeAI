@@ -4,9 +4,6 @@ from services.chat_service import ChatService
 import os
 from dotenv import load_dotenv
 import logging
-import json
-from nacl.signing import VerifyKey
-import asyncio
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -31,84 +28,38 @@ class CremeBot(discord.Client):
         logger.info(f'Logged in as {self.user} (ID: {self.user.id})')
         logger.info('------')
 
-async def handle_interaction(body, client):
-    """Handle Discord interaction"""
+# Create the bot instance
+client = CremeBot()
+
+@client.tree.command(name="chat", description="Chat with Crème Brûlée")
+async def chat(interaction: discord.Interaction, message: str):
     try:
-        if body['type'] == 2:  # APPLICATION_COMMAND
-            command_name = body['data']['name']
-            if command_name == 'chat':
-                message = body['data']['options'][0]['value']
-                response = await client.chat_service.generate_response(
-                    user_id=body['member']['user']['id'],
-                    message=message
-                )
-            elif command_name == 'decree':
-                response = await client.chat_service.generate_response(
-                    user_id=body['member']['user']['id'],
-                    message="Issue a royal decree!"
-                )
-            
-            return {
-                'type': 4,
-                'data': {
-                    'content': response['response']
-                }
-            }
+        logger.info(f"Received chat command from {interaction.user}")
+        await interaction.response.defer()
+        response = await client.chat_service.generate_response(
+            user_id=str(interaction.user.id),
+            message=message
+        )
+        await interaction.followup.send(response["response"])
+        logger.info("Successfully sent chat response")
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        return {
-            'type': 4,
-            'data': {
-                'content': "Meow? Something went wrong!"
-            }
-        }
+        logger.error(f"Error in chat command: {str(e)}")
+        await interaction.followup.send("Meow? Something went wrong!")
 
-def verify_signature(event):
-    """Verify that the request came from Discord"""
+@client.tree.command(name="decree", description="Request a royal decree")
+async def decree(interaction: discord.Interaction):
     try:
-        public_key = os.getenv('DISCORD_PUBLIC_KEY')
-        signature = event['headers']['x-signature-ed25519']
-        timestamp = event['headers']['x-signature-timestamp']
-        body = event['body']
-
-        verify_key = VerifyKey(bytes.fromhex(public_key))
-        verify_key.verify(f"{timestamp}{body}".encode(), bytes.fromhex(signature))
-        return True
+        logger.info(f"Received decree command from {interaction.user}")
+        await interaction.response.defer()
+        response = await client.chat_service.generate_response(
+            user_id=str(interaction.user.id),
+            message="Issue a royal decree!"
+        )
+        await interaction.followup.send(response["response"])
+        logger.info("Successfully sent decree")
     except Exception as e:
-        logger.error(f"Signature verification failed: {str(e)}")
-        return False
-
-def lambda_handler(event, context):
-    """AWS Lambda handler"""
-    logger.info(f"Received event: {json.dumps(event)}")
-    
-    # Verify the request
-    if not verify_signature(event):
-        return {
-            'statusCode': 401,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': 'invalid request signature'})
-        }
-
-    # Parse the request body
-    body = json.loads(event['body'])
-    
-    # Handle Discord's ping
-    if body['type'] == 1:  # PING
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'type': 1})  # PONG
-        }
-
-    # For now, just acknowledge other interactions
-    return {
-        'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
-        'body': json.dumps({
-            'type': 1
-        })
-    }
+        logger.error(f"Error in decree command: {str(e)}")
+        await interaction.followup.send("Meow? Something went wrong with the royal decree!")
 
 def run_bot():
     client.run(os.getenv('DISCORD_BOT_TOKEN'))
