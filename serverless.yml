@@ -4,7 +4,7 @@ frameworkVersion: '4.7.0'
 
 provider:
   name: aws
-  runtime: python3.12
+  runtime: python3.11
   region: us-east-1
   environment:
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
@@ -13,9 +13,11 @@ provider:
 functions:
   bot:
     handler: lambda_function.lambda_handler
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
     events:
       - http:
-          path: interactions
+          path: api/interactions
           method: post
           cors: true
 
@@ -28,3 +30,21 @@ package:
     - '!tests/**'
     - lambda_function.py
     - services/**
+    - requirements.txt
+
+custom:
+  pythonRequirements:
+    layer:
+      name: python-deps
+      description: Python dependencies
+    noDeploy:
+      - coverage
+      - pytest
+      - pytest-mock
+      - pytest-cov
+    dockerizePip: true
+    pipCmdExtraArgs:
+      - --no-cache-dir
+
+plugins:
+  - serverless-python-requirements

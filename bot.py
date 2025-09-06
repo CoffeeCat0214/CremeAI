@@ -1,5 +1,5 @@
 import discord
-from discord import app_commands
+from discord import app_commands 
 from services.chat_service import ChatService
 import os
 from dotenv import load_dotenv

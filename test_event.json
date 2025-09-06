@@ -1,0 +1,7 @@
+{
+  "headers": {
+    "x-signature-ed25519": "test_signature",
+    "x-signature-timestamp": "timestamp"
+  },
+  "body": "{\"type\": 1}"
+} 

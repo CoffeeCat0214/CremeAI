@@ -10,4 +10,4 @@ serverless deploy
 
 # Output the endpoint URL
 echo "Deployment complete! Use the following URL as your Discord Interactions Endpoint:"
-serverless info --verbose | grep "POST - /discord/interactions" 
+serverless info --verbose | grep "POST - /api/interactions" 
