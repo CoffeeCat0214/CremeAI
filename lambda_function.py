@@ -2,6 +2,11 @@ import json
 import logging
 import os
 import base64
+import random
+import urllib.request
+import urllib.error
+import boto3
+from typing import Any, Dict
 
 try:
     from nacl.signing import VerifyKey
@@ -61,12 +66,38 @@ def handle_command(body):
     """Handle Discord command"""
     try:
         command = body.get('data', {}).get('name', '')
-        
+
         if command == 'chat':
-            message = body.get('data', {}).get('options', [{}])[0].get('value', '')
-            response = f"Meow! You said: {message}"
+            # Extract message option and reply synchronously
+            opts = body.get('data', {}).get('options', []) or []
+            msg = ''
+            if isinstance(opts, list) and len(opts) > 0:
+                msg = str(opts[0].get('value', ''))
+            try:
+                reply = _generate_chat_reply(msg)
+                return {
+                    'type': 4,  # CHANNEL_MESSAGE_WITH_SOURCE
+                    'data': {
+                        'content': reply
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Error generating chat response: {str(e)}")
+                return {
+                    'type': 4,
+                    'data': {
+                        'content': "Meow? Something went wrong with the chat!"
+                    }
+                }
         elif command == 'decree':
-            response = "By royal decree, I declare this server to be under my purr-fect rule! 👑"
+            facts = [
+                "Brûlée is Turkish.",
+                "Brûlée does not like baths.",
+                "Brûlée only likes japanese cat food.",
+                "Brûlée is smart, beautiful, kind and likes daily affirmations.",
+                "Brûlée is 7 pounds and doesn’t bite."
+            ]
+            response = f"Cat Fact about Crème Brûlée: {random.choice(facts)}"
         else:
             response = "Meow? I don't understand that command!"
         
@@ -85,6 +116,17 @@ def handle_command(body):
             }
         }
 
+def _generate_chat_reply(message: str) -> str:
+    """Generate a reply. Tries ChatService; falls back to echo if unavailable/slow."""
+    try:
+        from services.chat_service import ChatService
+        svc = ChatService()
+        result = svc.generate_response(user_id="discord", message=message)
+        return result.get("response") or f"Meow! You said: {message}"
+    except Exception as e:
+        logger.warning("ChatService unavailable, falling back. err=%s", str(e))
+        return f"Meow! You said: {message}"
+
 def lambda_handler(event, context):
     """AWS Lambda handler"""
     try:
@@ -99,6 +141,9 @@ def lambda_handler(event, context):
         except Exception:
             pass
         
+        # (No internal follow-up handling in synchronous mode)
+        
+        
         # Prepare raw body bytes for signature verification
         raw_body = event.get("body", "")
         if event.get("isBase64Encoded") is True:
@@ -109,6 +154,7 @@ def lambda_handler(event, context):
             body_bytes = body_str.encode("utf-8")
 
         body = json.loads(body_str or "{}")
+
 
         # Verify signature for all requests (including PING)
         if not verify_signature(event, body_bytes):

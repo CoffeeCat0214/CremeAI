@@ -9,6 +9,12 @@ provider:
   environment:
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
     DISCORD_PUBLIC_KEY: ${env:DISCORD_PUBLIC_KEY}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${sls:stage}-bot
 
 functions:
   bot:
