@@ -90,6 +90,7 @@ def handle_command(body):
                     }
                 }
         elif command == 'decree':
+            # Randomized cat facts; avoid repeating the same fact back-to-back
             facts = [
                 "Brûlée is Turkish.",
                 "Brûlée does not like baths.",
@@ -97,7 +98,26 @@ def handle_command(body):
                 "Brûlée is smart, beautiful, kind and likes daily affirmations.",
                 "Brûlée is 7 pounds and doesn’t bite."
             ]
-            response = f"Cat Fact about Crème Brûlée: {random.choice(facts)}"
+
+            # Keep simple memory within warm Lambda container to prevent immediate repeats
+            global _last_fact_idx
+            try:
+                last_idx = _last_fact_idx  # may not exist yet
+            except NameError:
+                last_idx = None
+
+            if len(facts) == 1:
+                idx = 0
+            else:
+                # Pick a new index different from last_idx
+                idx = random.randrange(len(facts))
+                if last_idx is not None and len(facts) > 1:
+                    # up to two tries to avoid repetition; sufficient for small lists
+                    if idx == last_idx:
+                        idx = (idx + 1) % len(facts)
+
+            _last_fact_idx = idx
+            response = f"Cat Fact about Crème Brûlée: {facts[idx]}"
         else:
             response = "Meow? I don't understand that command!"
         
